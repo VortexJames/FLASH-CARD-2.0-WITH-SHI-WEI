@@ -55,14 +55,43 @@ export default function DocumentUpload({
     if (file.type === 'text/plain') {
       return await file.text()
     } else if (file.type === 'application/pdf') {
-      // For PDF files, we'll need to use a PDF parsing library
-      // For now, we'll show a message that PDF support is coming
-      throw new Error('PDF support coming soon! Please use text files for now.')
-    } else if (file.type.includes('word') || file.type.includes('document')) {
-      // For Word documents, we'll need to use a Word parsing library
-      throw new Error('Word document support coming soon! Please use text files for now.')
+      // Extract text from PDF using PDF.js
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        const pdfjsLib = await import('pdfjs-dist')
+        
+        // Set worker source for PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+        
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        let fullText = ''
+        
+        // Extract text from each page
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i)
+          const textContent = await page.getTextContent()
+          const pageText = textContent.items.map((item: any) => item.str).join(' ')
+          fullText += pageText + '\n'
+        }
+        
+        return fullText.trim()
+      } catch (error) {
+        console.error('PDF parsing error:', error)
+        throw new Error('Failed to parse PDF. Please ensure the file is not corrupted.')
+      }
+    } else if (file.type.includes('word') || file.type.includes('document') || file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+      // Extract text from Word documents using mammoth
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        const mammoth = await import('mammoth')
+        const result = await mammoth.extractRawText({ arrayBuffer })
+        return result.value
+      } catch (error) {
+        console.error('Word document parsing error:', error)
+        throw new Error('Failed to parse Word document. Please ensure the file is not corrupted.')
+      }
     } else {
-      throw new Error('Unsupported file type. Please use text files.')
+      throw new Error('Unsupported file type. Please use text files (.txt), PDF files (.pdf), or Word documents (.doc, .docx).')
     }
   }
 
@@ -148,7 +177,7 @@ export default function DocumentUpload({
             </button>
           </div>
           <p className="text-sm text-gray-500 mb-4">
-            Supports text files (.txt). PDF and Word support coming soon!
+            Supports text files (.txt), PDF files (.pdf), and Word documents (.doc, .docx)
           </p>
           <input
             ref={fileInputRef}

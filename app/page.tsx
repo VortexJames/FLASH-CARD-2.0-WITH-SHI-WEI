@@ -121,7 +121,7 @@ export default function Home() {
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-600">
-            <p>&copy; 2024 FlashCard AI. Built with Next.js and OpenAI.</p>
+            <p>&copy; 2024 FlashCard AI. Built with Next.js and GPT-3.5-turbo via OpenRouter.</p>
           </div>
         </div>
       </footer>
