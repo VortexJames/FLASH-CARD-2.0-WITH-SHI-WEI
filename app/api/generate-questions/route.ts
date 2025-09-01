@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { FlashCard, QuestionGenerationRequest } from '@/types'
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// OpenRouter configuration - using free models only
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
+
+// Free models available on OpenRouter
+const FREE_MODELS = [
+  'google/gemma-2-9b-it:free',
+  'meta-llama/llama-3.1-8b-instruct:free',
+  'microsoft/phi-3-mini-4k-instruct:free',
+  'nousresearch/nous-hermes-2-mixtral-8x7b-dpo:free'
+]
+
+// Function to get a random free model
+function getRandomFreeModel(): string {
+  return FREE_MODELS[Math.floor(Math.random() * FREE_MODELS.length)]
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,39 +30,60 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!OPENROUTER_API_KEY) {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
+        { error: 'OpenRouter API key not configured' },
         { status: 500 }
       )
     }
 
     // Create the prompt for question generation
     const prompt = createQuestionGenerationPrompt(content, numQuestions, difficulty, questionTypes)
+    
+    // Select a free model
+    const selectedModel = getRandomFreeModel()
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert educator who creates high-quality, objective questions for exam preparation. Generate questions that are clear, accurate, and test understanding of the material."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
+    // Make request to OpenRouter
+    const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'http://localhost:3000', // Update this for production
+        'X-Title': 'FlashCard App'
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert educator who creates high-quality, objective questions for exam preparation. Generate questions that are clear, accurate, and test understanding of the material."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      })
     })
 
-    const response = completion.choices[0]?.message?.content
-    if (!response) {
-      throw new Error('No response from OpenAI')
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('OpenRouter API error:', errorData)
+      throw new Error(`OpenRouter API error: ${response.status}`)
+    }
+
+    const completion = await response.json()
+    const responseContent = completion.choices?.[0]?.message?.content
+
+    if (!responseContent) {
+      throw new Error('No response from OpenRouter')
     }
 
     // Parse the response to extract questions
-    const questions = parseQuestionsFromResponse(response, numQuestions)
+    const questions = parseQuestionsFromResponse(responseContent, numQuestions)
     
     // Add metadata to each question
     const flashCards: FlashCard[] = questions.map((q, index) => ({
@@ -67,7 +99,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       questions: flashCards,
-      totalGenerated: flashCards.length
+      totalGenerated: flashCards.length,
+      modelUsed: selectedModel
     })
 
   } catch (error) {
