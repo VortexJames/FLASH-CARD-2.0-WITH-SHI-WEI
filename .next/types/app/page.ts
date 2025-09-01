@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // File: C:\Users\leong\OneDrive\Desktop\Sw Files\04_Career\Casual Projects\FlashCardApp\FLASH-CARD-2.0-WITH-SHI-WEI\app\page.tsx
+=======
+// File: C:\Users\Vortex\OneDrive\Desktop\Coding\FLASH CARD 2.0 WITH SHI WEI\app\page.tsx
+>>>>>>> 7a2659ded7a7652c0885e60dc4417ba7fc29f423
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

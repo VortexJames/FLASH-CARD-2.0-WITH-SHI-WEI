@@ -2,18 +2,18 @@
 
 ## 1. Create Environment File
 
-Create a file called `.env.local` in the root directory with your OpenAI API key:
+Create a file called `.env.local` in the root directory with your OpenRouter API key:
 
 ```env
-OPENAI_API_KEY=your_actual_api_key_here
+OPENROUTER_API_KEY=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
 ```
 
-## 2. Get Your OpenAI API Key
+## 2. Your OpenRouter API Key
 
-1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Sign in or create an account
-3. Click "Create new secret key"
-4. Copy the key and paste it in your `.env.local` file
+Your API key is already provided:
+- **API Key**: `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`
+- **Model**: GPT-3.5-turbo (gpt-3.5-turbo)
+- **Provider**: OpenRouter
 
 ## 3. Start the App
 
@@ -27,8 +27,8 @@ Use the `sample-content.txt` file to test the app without uploading your own doc
 
 ## 5. Upload Your Documents
 
-- Currently supports `.txt` files
-- PDF and Word support coming soon
+- Supports `.txt`, `.pdf`, `.doc`, and `.docx` files
+- Automatic text extraction from all formats
 - Drag and drop or click to browse
 
 ## Need Help?
