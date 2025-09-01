@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+{}
+=======
 {
   "components\\DocumentUpload.tsx -> mammoth": {
     "id": "components\\DocumentUpload.tsx -> mammoth",
@@ -12,3 +15,4 @@
     ]
   }
 }
+>>>>>>> 7a2659ded7a7652c0885e60dc4417ba7fc29f423

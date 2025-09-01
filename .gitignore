@@ -1,7 +1,10 @@
 node_modules
+<<<<<<< HEAD
+=======
 
 # Environment variables
 .env
+>>>>>>> 7a2659ded7a7652c0885e60dc4417ba7fc29f423
 .env.local
 .env.development.local
 .env.test.local
