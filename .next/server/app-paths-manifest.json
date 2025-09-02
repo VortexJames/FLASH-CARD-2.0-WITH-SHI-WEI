@@ -1,1 +1,4 @@
-{}
+{
+  "/api/generate-questions/route": "app/api/generate-questions/route.js",
+  "/page": "app/page.js"
+}

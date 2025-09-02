@@ -1,12 +1,12 @@
 export interface FlashCard {
-  id: string
-  question: string
-  answer: string
-  explanation?: string
-  category?: string
-  difficulty?: 'easy' | 'medium' | 'hard'
-  isCorrect?: boolean
-  lastReviewed?: Date
+  id: string;
+  question: string;
+  answer: string;
+  explanation?: string;
+  difficulty: string;
+  category: string;
+  lastReviewed?: Date;
+  isCorrect?: boolean;
 }
 
 export interface DocumentContent {

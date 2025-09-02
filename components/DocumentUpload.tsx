@@ -29,26 +29,19 @@ export default function DocumentUpload({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (!files) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    const newFiles: DocumentContent[] = []
-    
-    for (const file of Array.from(files)) {
-      try {
-        const content = await extractTextFromFile(file)
-        newFiles.push({
-          text: content,
-          filename: file.name,
-          fileType: file.type
-        })
-        toast.success(`Successfully processed ${file.name}`)
-      } catch (error) {
-        toast.error(`Failed to process ${file.name}: ${error}`)
-      }
-    }
+    const formData = new FormData();
+    formData.append('file', file);
 
-    setUploadedFiles(prev => [...prev, ...newFiles])
+    const response = await fetch('/api/generate-questions', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    // handle response (e.g., show flashcards)
   }
 
   const extractTextFromFile = async (file: File): Promise<string> => {
