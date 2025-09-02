@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { FlashCard, QuestionGenerationRequest } from '@/types'
+import { NextRequest, NextResponse } from 'next/server';
+import formidable from 'formidable';
+import { promisify } from 'util';
+import fs from 'fs';
+import pdfParse from 'pdf-parse';
+import { FlashCard } from '@/types'
 
-<<<<<<< HEAD
 // OpenRouter configuration - using free models only
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
-const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
+const OPENROUTER_API_KEY = process.env.OPENROUTER_// filepath: c:\Users\Vortex\FLASH-CARD-2.0-WITH-SHI-WEI\app\api\generate-questions\route.ts
+export const runtime = 'nodejs';
 
 // Free models available on OpenRouter
 const FREE_MODELS = [
@@ -19,81 +22,44 @@ function getRandomFreeModel(): string {
   return FREE_MODELS[Math.floor(Math.random() * FREE_MODELS.length)]
 }
 
-=======
->>>>>>> 7a2659ded7a7652c0885e60dc4417ba7fc29f423
 export async function POST(request: NextRequest) {
   try {
-    const body: QuestionGenerationRequest = await request.json()
-    const { content, numQuestions, difficulty, questionTypes } = body
+    // Parse multipart form data
+    const form = formidable();
+    const parseForm = promisify(form.parse.bind(form));
 
-    if (!content || !numQuestions) {
+    // Get raw request body as a stream
+    const req = request as unknown as { req: any };
+    const [fields, files] = await parseForm(req.req);
+
+    const file = files.file?.[0];  // formidable v4 returns an array
+    if (!file) {
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    }
+
+    // Read and parse PDF
+    const buffer = await fs.promises.readFile(file.filepath);
+    let textContent = '';
+    
+    try {
+      const pdfData = await pdfParse(buffer);
+      textContent = pdfData.text;
+    } catch (err) {
+      console.error('PDF parse error:', err);
       return NextResponse.json(
-        { error: 'Content and number of questions are required' },
+        { error: 'Failed to parse PDF' },
         { status: 400 }
-      )
+      );
     }
 
-<<<<<<< HEAD
-    if (!OPENROUTER_API_KEY) {
-      return NextResponse.json(
-        { error: 'OpenRouter API key not configured' },
-        { status: 500 }
-      )
-    }
+    // Generate questions
+    const numQuestions = 5;
+    const difficulty = 'medium';
+    const questionTypes = ['multiple-choice', 'true-false', 'fill-in-blank'];
 
-    // Create the prompt for question generation
-    const prompt = createQuestionGenerationPrompt(content, numQuestions, difficulty, questionTypes)
-    
-    // Select a free model
-    const selectedModel = getRandomFreeModel()
+    const questions = generateQuestionsLocally(textContent, numQuestions, difficulty, questionTypes);
 
-    // Make request to OpenRouter
-    const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'http://localhost:3000', // Update this for production
-        'X-Title': 'FlashCard App'
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert educator who creates high-quality, objective questions for exam preparation. Generate questions that are clear, accurate, and test understanding of the material."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      })
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('OpenRouter API error:', errorData)
-      throw new Error(`OpenRouter API error: ${response.status}`)
-    }
-
-    const completion = await response.json()
-    const responseContent = completion.choices?.[0]?.message?.content
-
-    if (!responseContent) {
-      throw new Error('No response from OpenRouter')
-    }
-
-    // Parse the response to extract questions
-    const questions = parseQuestionsFromResponse(responseContent, numQuestions)
-=======
-    // Generate questions locally without external API calls
-    const questions = generateQuestionsLocally(content, numQuestions, difficulty, questionTypes)
->>>>>>> 7a2659ded7a7652c0885e60dc4417ba7fc29f423
-    
-    // Add metadata to each question
+    // Convert to flash cards
     const flashCards: FlashCard[] = questions.map((q, index) => ({
       id: `card-${Date.now()}-${index}`,
       question: q.question,
@@ -103,30 +69,23 @@ export async function POST(request: NextRequest) {
       category: 'Generated',
       lastReviewed: undefined,
       isCorrect: undefined
-    }))
+    }));
 
+    // Clean up temporary file
+    await fs.promises.unlink(file.filepath);
+
+    // Return response
     return NextResponse.json({
       questions: flashCards,
-      totalGenerated: flashCards.length,
-      modelUsed: selectedModel
-    })
+      totalGenerated: flashCards.length
+    });
 
   } catch (error) {
-    console.error('Error generating questions:', error)
-    
-    // Provide more detailed error information
-    let errorMessage = 'Failed to generate questions'
-    if (error instanceof Error) {
-      errorMessage = error.message
-    }
-    
+    console.error('Error:', error);
     return NextResponse.json(
-      { 
-        error: errorMessage,
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to process request' },
       { status: 500 }
-    )
+    );
   }
 }
 
